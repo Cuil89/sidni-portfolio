@@ -1,24 +1,33 @@
 import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { ExternalLink, GitFork, Github, Loader2, Star } from "lucide-react";
-import { fallbackProjects, profile } from "../data/profile.js";
+import { fallbackProjects, featuredProjectNames, profile } from "../data/profile.js";
 import SectionTitle from "./SectionTitle.jsx";
 function repoTags(repo) {
   if (repo.tags?.length) return repo.tags;
   return [repo.language, ...(repo.topics || [])].filter(Boolean).slice(0, 3);
 }
 function normalizeRepo(repo) {
+  const fallback = fallbackProjects.find(
+    (f) =>
+      f.html_url?.toLowerCase() === repo.html_url?.toLowerCase() ||
+      f.name?.toLowerCase() === repo.name?.toLowerCase()?.replaceAll("-", ""),
+  );
   return {
-    name: repo.name?.replaceAll("-", "") || "Untitled Project",
+    rawName: repo.name, // Keep original name for sorting
+    name:
+      fallback?.name || repo.name?.replaceAll("-", "") || "Untitled Project",
     description:
+      fallback?.description ||
       repo.description ||
       "Project by Sidni Ilma. Detail repo bisa dilihat langsung di GitHub.",
-    tags: repoTags(repo),
+    tags: fallback?.tags || repoTags(repo),
     html_url: repo.html_url || profile.github,
     stargazers_count: repo.stargazers_count || 0,
     forks_count: repo.forks_count || 0,
     language: repo.language,
     updated_at: repo.updated_at,
+    isProgress: fallback?.isProgress || false,
   };
 }
 export default function GitHubProjects() {
@@ -31,24 +40,41 @@ export default function GitHubProjects() {
       try {
         const [repoResponse, userResponse] = await Promise.all([
           fetch(
-            `https://api.github.com/users/${profile.githubUser}/repos?sort=updated&per_page=9`,
+            `https://api.github.com/users/${profile.githubUser}/repos?sort=updated&per_page=60`,
           ),
           fetch(`https://api.github.com/users/${profile.githubUser}`),
         ]);
         if (!repoResponse.ok) throw new Error("GitHub repo request failed");
         const repoData = await repoResponse.json();
         const userData = userResponse.ok ? await userResponse.json() : null;
-        const publicRepos = repoData
-          .filter((repo) => !repo.fork)
+
+        // Filter out forks (except for capstone6) and map to our format
+        let processedRepos = repoData
+          .filter((repo) => !repo.fork || repo.name === "capstone6")
           .map(normalizeRepo);
+
+        // Sorting logic based on featuredProjectNames complexity
+        processedRepos.sort((a, b) => {
+          const indexA = featuredProjectNames.indexOf(a.rawName);
+          const indexB = featuredProjectNames.indexOf(b.rawName);
+
+          if (indexA !== -1 && indexB !== -1) return indexA - indexB;
+          if (indexA !== -1) return -1;
+          if (indexB !== -1) return 1;
+          return 0; // Keep original relative order for others
+        });
+
+        // Limit to 5 projects as requested
+        const finalRepos = processedRepos.slice(0, 5);
+
         if (active) {
-          setRepos(publicRepos.length ? publicRepos : fallbackProjects);
+          setRepos(finalRepos.length ? finalRepos : fallbackProjects.slice(0, 5));
           setUser(userData);
           setStatus("live");
         }
       } catch (error) {
         if (active) {
-          setRepos(fallbackProjects);
+          setRepos(fallbackProjects.slice(0, 5));
           setStatus("fallback");
         }
       }
@@ -167,7 +193,14 @@ export default function GitHubProjects() {
                 <h3 className="font-display text-3xl font-bold tracking-wide leading-none">
                   {repo.name}
                 </h3>{" "}
-                <Github className="h-8 w-8 shrink-0" strokeWidth={3} />{" "}
+                <div className="flex items-center gap-2">
+                  {repo.isProgress && (
+                    <span className="border-2 border-black bg-acid text-black px-2 py-0.5 rounded-md font-display text-[10px] font-black uppercase tracking-tighter shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+                      In Progress
+                    </span>
+                  )}
+                  <Github className="h-8 w-8 shrink-0" strokeWidth={3} />{" "}
+                </div>{" "}
               </div>{" "}
               <p className="font-bold leading-relaxed">{repo.description}</p>{" "}
               <div className="mt-5 flex flex-wrap gap-2">

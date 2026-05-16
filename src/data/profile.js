@@ -90,7 +90,23 @@ export const eventExperiences = [
   }
 ];
 
+export const featuredProjectNames = [
+  "capstone6",
+  "UTS_LARAVEL",
+  "Jasa-Curhat",
+  "Pengelolaan-barang-hilang",
+  "CostomorMONGODB"
+];
+
+
 export const fallbackProjects = [
+  {
+    name: "Smart Health News",
+    description: "An auto-updating health news system fetching real-time data from global sources like WHO & CDC with automated scoring.",
+    tags: ["Flutter", "Python", "Flask"],
+    html_url: "https://github.com/Cuil89/capstone6",
+    isProgress: true
+  },
   {
     name: "Smart Pharmacy System",
     description: "A comprehensive digital solution for streamlining pharmacy operations with an intuitive, scannable interface.",
@@ -114,11 +130,7 @@ export const fallbackProjects = [
     description: "A secure mobile application leveraging Flutter and Firebase for seamless authentication and cloud storage.",
     tags: ["Flutter", "Firebase", "Mobile"],
     html_url: "https://github.com/Cuil89"
-  },
-  {
-    name: "Interactive 2D Game",
-    description: "A 2D game prototype developed in Unity, featuring engaging mechanics, playful visuals, and smooth animations.",
-    tags: ["Unity", "C#", "Game Dev"],
-    html_url: "https://github.com/Cuil89"
   }
 ];
+
+
